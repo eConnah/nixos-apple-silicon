@@ -33,10 +33,17 @@ let
 in
 {
   config = lib.mkIf config.hardware.asahi.enable {
-    # install m1n1 with the boot loader
+    # grub and systemd-boot place m1n1 correctly on the boot loader
     boot.loader.grub.extraFiles = bootFiles;
     boot.loader.systemd-boot.extraFiles = bootFiles;
-    boot.loader.limine.additionalFiles = bootFiles;
+
+    # limine sandboxes additionalFiles to a limine folder
+    boot.loader.limine.extraInstallCommands = ''
+      M1N1_DIR="${config.boot.loader.efi.efiSysMountPoint}/m1n1"
+      mkdir -p "$M1N1_DIR"
+      cp "${bootFiles."m1n1/boot.bin"}" "$M1N1_DIR/boot.bin.tmp"
+      mv "$M1N1_DIR/boot.bin.tmp" "$M1N1_DIR/boot.bin"
+    '';
 
     # ensure the installer has m1n1 in the image
     system.extraDependencies = lib.mkForce [
